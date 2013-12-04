@@ -207,7 +207,7 @@ function datasetToHTML(d, value) {
     var aside = "<h4>" + value.title + "</h4>"
     aside += "<p><i>" + value.organisation + "</i><p>";
     aside += "<p><b>" + value.path + "</b><p>";
-    aside += "<p id='cluster'>" + formatKeyWords(value.keywords) + "</p>";
+    aside += "<p id='cluster'>" + formatKeyWords(value.keywords, true) + "</p>";
     aside += "<p>" + value.content + "</p>";
     aside += "<h5>Jeux de données similaires</h5>";
     aside += "<ul>"
