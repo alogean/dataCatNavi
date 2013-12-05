@@ -113,11 +113,11 @@
 <script>
     // load the script when the page is ready
     $(document).ready(function () {
-        var d = getDatasets();
-        clusterToHTML(d);
-        $.each(d, function (key, value) {
-            $(document).on('click', '#' + key, function (event) {
-                var aside = datasetToHTML(d,value)
+        var __list_datasets__ = getDatasets();
+        clusterToHTML(__list_datasets__);
+        $.each(__list_datasets__, function (dataset_name, dataset_content) {
+            $(document).on('click', '#' + dataset_name, function (event) {
+                var aside = datasetToHTML(__list_datasets__,dataset_content);
                 $("#aside").html(aside);
             });
         });

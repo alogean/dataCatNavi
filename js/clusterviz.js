@@ -100,7 +100,7 @@ function gradient(startColor, endColor, steps) {
 }
 
 function formatKeyWords(list_of_keywords, scaling) {
-    var outputlist = "";
+    var outputlist = "<div id='wordcloud'><p id='wordcloud_content'>" ;
     for (var i = 0; i < list_of_keywords.length; i++) {
         if (scaling) {
             outputlist = outputlist + "<span style='font-size:"
@@ -110,7 +110,7 @@ function formatKeyWords(list_of_keywords, scaling) {
             outputlist = outputlist + list_of_keywords[i].name + " ";
         }
     }
-    ;
+    outputlist += "</p></div>";
     return outputlist;
 };
 
@@ -203,39 +203,39 @@ function paintGraph() {
     sigInst.draw();
 }
 
-function datasetToHTML(d, value) {
-    var aside = "<h4>" + value.title + "</h4>"
-    aside += "<p><i>" + value.organisation + "</i><p>";
-    aside += "<p><b>" + value.path + "</b><p>";
-    aside += "<p id='cluster'>" + formatKeyWords(value.keywords, true) + "</p>";
-    aside += "<p>" + value.content + "</p>";
+function datasetToHTML(list_datasets, dataset_name) {
+    var aside = "<h4>" + dataset_name.title + "</h4>"
+    aside += "<p><i>" + dataset_name.organisation + "</i><p>";
+    aside += "<p><b>" + dataset_name.path + "</b><p>";
+    aside +=  formatKeyWords(dataset_name.keywords, true) + "</p></div>";
+    aside += "<p>" + dataset_name.content + "</p>";
     aside += "<h5>Jeux de données similaires</h5>";
     aside += "<ul>"
-    $.each(value.similars, function (item) {
-        var datasetName = value.similars[item].name;
-        if (d.hasOwnProperty(datasetName)) {
-            var datasetName = d[datasetName].title;
-            //console.log(datasetName);
+    $.each(dataset_name.similars, function (item) {
+        var datasetName = dataset_name.similars[item].name;
+        if (list_datasets.hasOwnProperty(datasetName)) {
+            var datasetName = list_datasets[datasetName].title;
         }
-        aside += "<li>" + datasetName + "</li>";
+        aside += "<li><a id='sim_" + datasetName + "' href='#bar'>" + datasetName + "</a></li>";
     });
     aside += "</ul>";
     return aside;
 }
 
-function clusterToHTML(d) {
-    var c = getClusterHash();
-    $.each(c, function (cluster, value) {
+function clusterToHTML(list_datasets) {
+    var __list_clusters__ = getClusterHash();
+    $.each(__list_clusters__, function (cluster, value) {
         $("#nav").append("<div id='"
             + cluster
             + "'><h4><a href='#something'>"
-            + getClusterName(cluster) + "</a></h4><p id='cluster'>" + formatKeyWords(c[cluster].keywords, true) + "</p></div>");
+            + getClusterName(cluster) + "</a></h4>" + formatKeyWords(__list_clusters__[cluster].keywords, true) + "</div>");
         $('#' + cluster).click(function (event) {
-            var content_list = clusterDatasetListToHTML(c ,d, cluster, value);
-            $("#section").html(content_list);
+            var __content_list__ = clusterDatasetListToHTML(__list_clusters__ ,list_datasets, cluster, value);
+            $("#section").html(__content_list__);
         });
     });
 }
+
 
 function getClusterName(cluster){
     return cluster.replace("collection_", "Cluster ");
@@ -244,7 +244,7 @@ function getClusterName(cluster){
 
 function clusterDatasetListToHTML(c ,d, cluster, value) {
     var content_list = "<h2>" + getClusterName(cluster) + "</h2>";
-    content_list += "<p id='cluster'>" + formatKeyWords(c[cluster].keywords, true) + "</p>";
+    content_list += formatKeyWords(c[cluster].keywords, true);
     content_list += "<ul>";
     for (var i = 0; i < value.list_datasets.length; i++) {
         var dsName = datasetName = value.list_datasets[i];
