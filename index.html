@@ -48,20 +48,8 @@
             <div class="nav-collapse collapse">
                 <ul class="nav">
                     <li class="active"><a href="#">Navigateur</a></li>
-                    <li><a href="#about">A propos</a></li>
                     <li><a href="http://ge.ch/sitg/">Le SITG</a></li>
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
-                        <ul class="dropdown-menu">
-                            <li><a href="#">Action</a></li>
-                            <li><a href="#">Another action</a></li>
-                            <li><a href="#">Something else here</a></li>
-                            <li class="divider"></li>
-                            <li class="nav-header">Nav header</li>
-                            <li><a href="#">Separated link</a></li>
-                            <li><a href="#">One more separated link</a></li>
-                        </ul>
-                    </li>
+                    <li><a href="gexf-js-master/index.html">Vue en graphe</a></li>
                 </ul>
             </div>
             <!--/.nav-collapse -->
@@ -69,7 +57,7 @@
     </div>
 </div>
 
-<div class="container">
+<div class="container" ng-app>
 
     <!-- Example row of columns -->
     <div class="row">
@@ -106,14 +94,25 @@
 <script src="js/bootstrap-collapse.js"></script>
 <script src="js/bootstrap-carousel.js"></script>
 <script src="js/bootstrap-typeahead.js"></script>
+<script src="js/angular/angular.min.js"></script>
+
+
+<script src="js/clusterviz.js"></script>
+
 <script src="js/SITG_CLUSTER.js"></script>
 <script src="js/SITG_DATASET.js"></script>
 <script src="js/SITG_SIMILAR.js"></script>
-<script src="js/clusterviz.js"></script>
+
+
 <script>
     // load the script when the page is ready
     $(document).ready(function () {
         var __list_datasets__ = getDatasets();
+        var clusterhash = getClusterHash();
+
+        //console.log(__list_datasets__);
+        //console.log(clusterhash);
+        //console.log(getGexfFromDatasets());
         clusterToHTML(__list_datasets__);
         $.each(__list_datasets__, function (dataset_name, dataset_content) {
             $(document).on('click', '#' + dataset_name, function (event) {

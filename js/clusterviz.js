@@ -1,36 +1,79 @@
+String.prototype.hashCode = function(){
+    if (Array.prototype.reduce){
+        return this.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+    }
+    var hash = 0;
+    if (this.length === 0) return hash;
+    for (var i = 0; i < this.length; i++) {
+        var character  = this.charCodeAt(i);
+        hash  = ((hash<<5)-hash)+character;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
+}
+
 // load the JSON data about clusters
 function getClusterHash() {
     var f_clusters = {};
-    $.each(clusters, function (name, val) {
-        if (clusters[name].type[0].value == "Collection") {
+    $.each(CLUSTERS, function (name, val) {
+        if (CLUSTERS[name].type[0].value == "Collection") {
             //f_clusters[name] = {};
             var list_datasets_in_cluster = [];
-            for (var i = 0; i < clusters[name].member.length; i++) {
-                var concept_name = clusters[name].member[i].value;
-                list_datasets_in_cluster.push(clusters[concept_name].definition[0].value);
+            for (var i = 0; i < CLUSTERS[name].member.length; i++) {
+                var concept_name = CLUSTERS[name].member[i].value;
+                list_datasets_in_cluster.push(CLUSTERS[concept_name].definition[0].value);
                 //console.log(list_datasets_in_cluster);
             }
             ;
             f_clusters[name] = {};
+            f_clusters[name].name = name;
             f_clusters[name].list_datasets = list_datasets_in_cluster;
-            f_clusters[name].keywords = listSplitter(clusters[name].note[0].value);
+            f_clusters[name].keywords = listSplitter(CLUSTERS[name].note[0].value);
         }
         ;
     });
     return f_clusters;
 };
 
+function getClusterNameFromDatasetName(dsname) {
+    var ds_Cluster = getDatasetClusterHash();
+    //console.log(ds_Cluster);
+    if (ds_Cluster.hasOwnProperty(dsname)) {
+        return ds_Cluster[dsname][0];
+    } else return "unclustered";
+}
+
+function getDatasetClusterHash() {
+    var __list_clusters__ = getClusterHash();
+    var __datasetClusterHash__ = {};
+    $.each(__list_clusters__, function (clustername, content) {
+        $.each(content.list_datasets, function (content, ds) {
+            //console.log(ds);
+           if ( !__datasetClusterHash__.hasOwnProperty(ds)) {
+               __datasetClusterHash__[ds] = [];
+           }
+            __datasetClusterHash__[ds].push(clustername);
+        });
+    });
+    return __datasetClusterHash__;
+}
+
 // load the JSON data about the sitg datasets
 function getDatasets() {
+
     $.each(datasets, function (name, content) {
         if (similars.hasOwnProperty(name)) {
             datasets[name].keywords = listSplitter(similars[name].definition[0].value);
             datasets[name].similars = listSplitter(similars[name].note[0].value);
-        }
-        ;
+            datasets[name].cluster = getClusterNameFromDatasetName(name);
+        };
     });
     return datasets;
 };
+
+function hashme(s){
+    return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+}
 
 function listSplitter(content) {
     var startcontent = content.replace("[", "").replace("]", "");
@@ -42,8 +85,7 @@ function listSplitter(content) {
         if (a.length > 0) {
             myo.name = $.trim(a[0]);
             myo.value = parseFloat(a[1]);
-        }
-        ;
+        };
         list.push(myo);
     }
     ;
@@ -114,6 +156,7 @@ function formatKeyWords(list_of_keywords, scaling) {
     return outputlist;
 };
 
+/*
 $(function () {
     jQuery.fn.equalHeight = function () {
         var tallest = 0;
@@ -123,18 +166,24 @@ $(function () {
         return this.height(tallest);
     };
 });
+*/
 
 function getGexfFromDatasets() {
     var o = "<?xml version='1.0' encoding='UTF-8'?>\n";
-    o += "<gexf xmlns='http://www.gexf.net/1.2draft' version='1.2'>\n";
+    o += "<gexf xmlns='http://www.gexf.net/1.2draft' xmlns:viz='http://www.gexf.net/1.1draft/viz' version='1.2'>\n";
     o += "<graph mode='static' defaultedgetype='directed' >";
     o += "<nodes>\n";
     $.each(datasets, function (name, content) {
         if (similars.hasOwnProperty(name)) {
             datasets[name].similars = listSplitter(similars[name].note[0].value);
-        }
-        ;
-        o += "<node id='" + name + "' label='" + name + "'/>\n";
+        };
+        o += "<node id='" + name + "' label='" + datasets[name].title.replace("D'", "") + "'>\n";
+        var color;
+        if (datasets[name].hasOwnProperty("cluster")) {
+            color = toColor(datasets[name].cluster.toString().hashCode());
+        } else color = toColor("undefined".hashCode());
+        o += "<viz:color r='" + color[0] + "' g='" + color[1] + "' b='" + color[2] + "'></viz:color>\n" ;
+        o += "</node>\n";
     });
     o += "</nodes>\n";
     o += "<edges>\n";
@@ -142,10 +191,12 @@ function getGexfFromDatasets() {
         if (datasets[name].hasOwnProperty("similars")) {
             $.each(datasets[name].similars, function (i) {
                 var target = datasets[name].similars[i].name;
-                o += "<edge id='"
-                    + name + "_" + target
-                    + "' source='" + name
-                    + "' target='" + target + "'/>\n";
+                if( datasets[target] != undefined ) {
+                  o += "<edge id='"
+                      + name + "_" + target
+                      + "' source='" + name
+                      + "' target='" + target + "'/>\n";
+                }
             });
         }
         ;
@@ -157,9 +208,36 @@ function getGexfFromDatasets() {
     return o;
 };
 
+function format_titre( titre) {
+    o = titre.replaceAll("D'", "D ");
+    o = titre.replaceAll("d'", "d ");
+    o = titre.replaceAll("L'", "L ");
+    o = titre.replaceAll("l'", "l ");
+    o = titre.replaceAll("'0", " 0");
+}
 function returnClusterNum(datasetName) {
     return 1;
 }
+
+function getd3json2() {
+    var links = [];
+    $.each(datasets, function (name, content) {
+        if (similars.hasOwnProperty(name)) {
+            datasets[name].similars = listSplitter(similars[name].note[0].value);
+        };
+    });
+    $.each(datasets, function (name, content) {
+        if (datasets[name].hasOwnProperty("similars")) {
+            $.each(datasets[name].similars, function (i) {
+                var target = datasets[name].similars[i].name;
+                var source = name;
+                link = {"source":source, "target":target, "type":1};
+                links.push(link);
+            });
+        };
+    });
+    return links;
+};
 
 function getd3json() {
     var o = { "nodes":[ ], "edges":[ ]};
@@ -203,20 +281,24 @@ function paintGraph() {
     sigInst.draw();
 }
 
-function datasetToHTML(list_datasets, dataset_name) {
-    var aside = "<h4>" + dataset_name.title + "</h4>"
-    aside += "<p><i>" + dataset_name.organisation + "</i><p>";
-    aside += "<p><b>" + dataset_name.path + "</b><p>";
-    aside +=  formatKeyWords(dataset_name.keywords, true) + "</p></div>";
-    aside += "<p>" + dataset_name.content + "</p>";
+function datasetToHTML(list_datasets, dataset) {
+    var aside = "<h4>" + dataset.title + "</h4>"
+    aside += "<p><i>" + dataset.organisation + "</i><p>";
+    aside += "<p><b>" + dataset.path + "</b><p>";
+    aside +=  formatKeyWords(dataset.keywords, true) + "</p></div>";
+    aside += "<p>" + dataset.content + "</p>";
     aside += "<h5>Jeux de données similaires</h5>";
     aside += "<ul>"
-    $.each(dataset_name.similars, function (item) {
-        var datasetName = dataset_name.similars[item].name;
+    $.each(dataset.similars, function (item) {
+        var datasetName = dataset.similars[item].name;
         if (list_datasets.hasOwnProperty(datasetName)) {
             var datasetName = list_datasets[datasetName].title;
         }
-        aside += "<li><a id='sim_" + datasetName + "' href='#bar'>" + datasetName + "</a></li>";
+        aside += "<li><a id='sim_" + item + "' href='#bari'>" + datasetName + "</a></li>";
+        $(document).on('click', '#sim_' + item, function (event) {
+            var dyn_aside = datasetToHTML(list_datasets,dataset);
+            $("#aside").html(dyn_aside);
+        });
     });
     aside += "</ul>";
     return aside;
@@ -255,6 +337,26 @@ function clusterDatasetListToHTML(c ,d, cluster, value) {
     }
     content_list = content_list + "</ul>";
     return content_list;
+}
+
+function clusterCtrl($scope) {
+    $scope.clusters = getClusterHash();
+}
+
+function datasetCtrl($scope) {
+    $scope.datasets = getDatasets();
+
+}
+
+
+
+function toColor(num) {
+    num >>>= 0;
+    var b = num & 0xFF,
+        g = (num & 0xFF00) >>> 8,
+        r = (num & 0xFF0000) >>> 16,
+        a = ( (num & 0xFF000000) >>> 24 ) / 255 ;
+    return [r, g, b, a] ;
 }
 
 

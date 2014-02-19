@@ -1,4 +1,4 @@
-var clusters = { "collection_563" : {
+var CLUSTERS = { "collection_563" : {
     "type" : [ {
         "value" : "Collection",
         "type" : "uri"
